@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "dgSpecHash": "/AUfxoiv7nk=",
+  "success": false,
+  "projectFilePath": "C:\\Users\\Admin\\Documents\\cicd\\dotnet-ubuntu-cicd\\MyApiApp\\MyApiApp.csproj",
+  "expectedPackageFiles": [],
+  "logs": [
+    {
+      "code": "NU1100",
+      "level": "Error",
+      "message": "Unable to resolve 'Microsoft.AspNetCore.OpenApi (>= 8.0.26)' for 'net8.0'.",
+      "libraryId": "Microsoft.AspNetCore.OpenApi",
+      "targetGraphs": [
+        "net8.0"
+      ]
+    },
+    {
+      "code": "NU1100",
+      "level": "Error",
+      "message": "Unable to resolve 'Swashbuckle.AspNetCore (>= 6.6.2)' for 'net8.0'.",
+      "libraryId": "Swashbuckle.AspNetCore",
+      "targetGraphs": [
+        "net8.0"
+      ]
+    }
+  ]
+}
