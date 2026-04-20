@@ -1,0 +1,27 @@
+name: CI/CD Direct Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    
+    steps:
+    - name: Checkout Source Code
+      uses: actions/checkout@v4
+
+    - name: Build and Publish Application
+      run: |
+        # Build the project and output to the publish directory
+        dotnet publish MyApiApp/MyApiApp.csproj -c Release -o ./publish
+
+    - name: Deploy and Run Service
+      run: |
+        # Terminate existing process to free up port 5000
+        pkill -f "MyApiApp.dll" || true
+        
+        # Start application in the background using nohup
+        cd ./publish
+        nohup dotnet MyApiApp.dll --urls "http://0.0.0.0:5000" > /dev/null 2>&1 &
