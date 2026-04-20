@@ -24,4 +24,4 @@ jobs:
         
         # Start application in the background using nohup
         cd ./publish
-        nohup dotnet MyApiApp.dll --urls "http://0.0.0.0:5000" > /dev/null 2>&1 &
+        nohup dotnet MyApiApp.dll --urls "http://0.0.0.0:5000" > app.log 2>&1 &
