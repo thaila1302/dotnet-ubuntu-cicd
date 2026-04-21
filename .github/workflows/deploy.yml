@@ -26,4 +26,4 @@ jobs:
         
         # Start application in the background using nohup
         cd ./publish
-        nohup dotnet MyApiApp.dll --urls "http://0.0.0.0:5000" > app.log 2>&1 &
+        nohup dotnet /home/thaila/actions-runner/_work/dotnet-ubuntu-cicd/dotnet-ubuntu-cicd/publish/MyApiApp.dll --urls "http://0.0.0.0:5000" > app.log 2>&1 &
