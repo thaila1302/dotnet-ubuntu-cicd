@@ -18,6 +18,8 @@ jobs:
         dotnet publish MyApiApp/MyApiApp.csproj -c Release -o ./publish
 
     - name: Deploy and Run Service
+      env:
+        RUNNER_TRACK_PROCESSES: false
       run: |
         # Terminate existing process to free up port 5000
         pkill -f "MyApiApp.dll" || true
