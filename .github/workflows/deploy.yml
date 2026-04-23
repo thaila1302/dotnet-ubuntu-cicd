@@ -1,29 +1,42 @@
-name: CI/CD Direct Deploy
+name: .NET Core CI/CD
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ] # Theo dõi cả 2 nhánh
 
 jobs:
-  deploy:
-    runs-on: self-hosted
+  build-and-deploy:
+    runs-on: self-hosted          
     
     steps:
-    - name: Checkout Source Code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-    - name: Build and Publish Application
-      run: |
-        # Build the project and output to the publish directory
-        dotnet publish MyApiApp/MyApiApp.csproj -c Release -o ./publish
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
 
-    - name: Deploy and Run Service
+    - name: Publish Application
+      run: dotnet publish ./MyApiApp/MyApiApp.csproj -c Release -o ./MyApiApp/publish
+
+    # --- NHÁNH DEVELOP: Deploy lên cổng 5001 ---
+    - name: Deploy to Staging (Develop)
+      if: github.ref == 'refs/heads/develop'
       env:
         RUNNER_TRACK_PROCESSES: false
       run: |
-        # Terminate existing process to free up port 5000
-        pkill -f "MyApiApp.dll" || true
-        
-        # Start application in the background using nohup
-        cd ./publish
-        nohup dotnet /home/thaila/actions-runner/_work/dotnet-ubuntu-cicd/dotnet-ubuntu-cicd/publish/MyApiApp.dll --urls "http://0.0.0.0:5000" > app.log 2>&1 &
+        # Kill process cũ trên port 5001
+        fuser -k 5001/tcp || true
+        cd ./MyApiApp/publish
+        nohup dotnet MyApiApp.dll --urls "http://0.0.0.0:5001" > staging.log 2>&1 &
+
+    # --- NHÁNH MAIN: Deploy lên cổng 5000 ---
+    - name: Deploy to Production (Main)
+      if: github.ref == 'refs/heads/main'
+      env:
+        RUNNER_TRACK_PROCESSES: false
+      run: |
+        # Kill process cũ trên port 5000
+        fuser -k 5000/tcp || true
+        cd ./MyApiApp/publish
+        nohup dotnet MyApiApp.dll --urls "http://0.0.0.0:5000" > production.log 2>&1 &
