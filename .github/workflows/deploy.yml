@@ -22,15 +22,7 @@ jobs:
       env:
         RUNNER_TRACK_PROCESSES: false
       run: |
-        # 1. Định nghĩa đường dẫn tuyệt đối mà bạn đã tìm thấy
-        APP_PATH="/home/thaila/actions-runner/_work/dotnet-ubuntu-cicd/dotnet-ubuntu-cicd/MyApiApp/publish"
-        
-        # 2. Giải phóng cổng 5001
-        fuser -k 5001/tcp || true
-        
-        # 3. Vào đúng thư mục và kích hoạt app chạy ngầm
-        cd $APP_PATH
-        setsid dotnet MyApiApp.dll --urls "http://0.0.0.0:5001" > staging.log 2>&1 &
+        sudo systemctl restart myapp-staging.service
 
     # --- NHÁNH MAIN: Deploy lên cổng 5000 (Production) ---
     - name: Deploy to Production (Main)
