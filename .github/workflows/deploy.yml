@@ -30,11 +30,7 @@ jobs:
         
         # 3. Vào đúng thư mục và kích hoạt app chạy ngầm
         cd $APP_PATH
-        nohup dotnet MyApiApp.dll --urls "http://0.0.0.0:5001" > staging.log 2>&1 &
-        disown
-        # 4. (Tùy chọn) Kiểm tra nhanh xem app có lên không
-        sleep 2
-        ps aux | grep MyApiApp.dll | grep 5001
+        setsid dotnet MyApiApp.dll --urls "http://0.0.0.0:5001" > staging.log 2>&1 &
 
     # --- NHÁNH MAIN: Deploy lên cổng 5000 (Production) ---
     - name: Deploy to Production (Main)
@@ -50,8 +46,4 @@ jobs:
         
         # 3. Vào thư mục và kích hoạt app
         cd $APP_PATH
-        nohup dotnet MyApiApp.dll --urls "http://0.0.0.0:5000" > production.log 2>&1 &
-        
-        # 4. Kiểm tra tiến trình
-        sleep 2
-        ps aux | grep MyApiApp.dll | grep 5000
+        setsid dotnet MyApiApp.dll --urls "http://0.0.0.0:5000" > staging.log 2>&1 &
