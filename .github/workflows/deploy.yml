@@ -2,36 +2,56 @@ name: .NET Core CI/CD
 
 on:
   push:
-    branches: [ "main", "develop" ] # Theo dõi cả 2 nhánh
+    branches: [ "main", "develop" ]
 
 jobs:
   build-and-deploy:
     runs-on: self-hosted          
     
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout Source Code
+      uses: actions/checkout@v4
 
     - name: Publish Application
+      # Sử dụng dotnet publish để đóng gói app vào thư mục tạm của Runner
       run: dotnet publish ./MyApiApp/MyApiApp.csproj -c Release -o ./MyApiApp/publish
 
-    # --- NHÁNH DEVELOP: Deploy lên cổng 5001 ---
+    # --- NHÁNH DEVELOP: Deploy lên cổng 5001 (Staging) ---
     - name: Deploy to Staging (Develop)
       if: github.ref == 'refs/heads/develop'
       env:
         RUNNER_TRACK_PROCESSES: false
       run: |
-        # Kill process cũ trên port 5001
+        # 1. Định nghĩa đường dẫn tuyệt đối mà bạn đã tìm thấy
+        APP_PATH="/home/thaila/actions-runner/_work/dotnet-ubuntu-cicd/dotnet-ubuntu-cicd/MyApiApp/publish"
+        
+        # 2. Giải phóng cổng 5001
         fuser -k 5001/tcp || true
-        cd ./MyApiApp/publish
+        
+        # 3. Vào đúng thư mục và kích hoạt app chạy ngầm
+        cd $APP_PATH
         nohup dotnet MyApiApp.dll --urls "http://0.0.0.0:5001" > staging.log 2>&1 &
+        
+        # 4. (Tùy chọn) Kiểm tra nhanh xem app có lên không
+        sleep 2
+        ps aux | grep MyApiApp.dll | grep 5001
 
-    # --- NHÁNH MAIN: Deploy lên cổng 5000 ---
+    # --- NHÁNH MAIN: Deploy lên cổng 5000 (Production) ---
     - name: Deploy to Production (Main)
       if: github.ref == 'refs/heads/main'
       env:
         RUNNER_TRACK_PROCESSES: false
       run: |
-        # Kill process cũ trên port 5000
+        # 1. Định nghĩa đường dẫn tuyệt đối
+        APP_PATH="/home/thaila/actions-runner/_work/dotnet-ubuntu-cicd/dotnet-ubuntu-cicd/MyApiApp/publish"
+        
+        # 2. Giải phóng cổng 5000
         fuser -k 5000/tcp || true
-        cd ./MyApiApp/publish
+        
+        # 3. Vào thư mục và kích hoạt app
+        cd $APP_PATH
         nohup dotnet MyApiApp.dll --urls "http://0.0.0.0:5000" > production.log 2>&1 &
+        
+        # 4. Kiểm tra tiến trình
+        sleep 2
+        ps aux | grep MyApiApp.dll | grep 5000
