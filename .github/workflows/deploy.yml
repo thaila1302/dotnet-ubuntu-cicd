@@ -2,40 +2,58 @@ name: .NET Core CI/CD with Docker
 
 on:
   push:
-    branches: [ "main", "develop" ]
+    branches:
+      - develop
+      - main
 
 jobs:
-  build-and-deploy:
-    runs-on: self-hosted          
-    
+  # ==========================================
+  # TẦNG 1: CONTINUOUS INTEGRATION (CI) - KIỂM DUYỆT
+  # ==========================================
+  ci-testing:
+    runs-on: self-hosted
     steps:
-    - name: Checkout Source Code
-      uses: actions/checkout@v4
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
 
-    # --- NHÁNH DEVELOP: Deploy Container lên cổng 5001 ---
-    - name: Deploy to Staging (Develop)
-      if: github.ref == 'refs/heads/develop'
-      run: |
-        # 1. Build Docker Image từ file Dockerfile vừa tạo
-        docker build -t myapp-api:develop .
-        
-        # 2. Dừng và xóa container cũ (nếu có) để giải phóng cổng 5001
-        docker stop myapp-staging || true
-        docker rm myapp-staging || true
-        
-        # 3. Chạy container mới: Map cổng 5001 của máy Ubuntu vào cổng 5000 bên trong Docker
-        docker run -d --name myapp-staging -p 5001:5000 myapp-api:develop
+      - name: Restore Dependencies
+        run: dotnet restore
 
-    # --- NHÁNH MAIN: Deploy Container lên cổng 5000 ---
-    - name: Deploy to Production (Main)
-      if: github.ref == 'refs/heads/main'
-      run: |
-        # 1. Build Docker Image cho Production
-        docker build -t myapp-api:main .
-        
-        # 2. Dừng và xóa container cũ trên cổng 5000
-        docker stop myapp-production || true
-        docker rm myapp-production || true
-        
-        # 3. Chạy container mới: Map cổng 5000 của máy Ubuntu vào cổng 5000 bên trong Docker
-        docker run -d --name myapp-production -p 5000:5000 myapp-api:main
+      - name: Compile and Build Check
+        run: dotnet build --no-restore --configuration Release
+
+  # ==========================================
+  # TẦNG 2: DEPLOY CHO NHÁNH DEVELOP (STAGING)
+  # ==========================================
+  deploy-staging:
+    if: github.ref == 'refs/heads/develop'
+    runs-on: self-hosted
+    needs: ci-testing # Bắt buộc phải qua môn CI mới được chạy
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image and Run Staging Container
+        run: |
+          docker build -t myapp-api:develop .
+          docker stop myapp-staging || true
+          docker rm myapp-staging || true
+          docker run -d --name myapp-staging -p 5001:5000 myapp-api:develop
+
+  # ==========================================
+  # TẦNG 3: DEPLOY CHO NHÁNH MAIN (PRODUCTION)
+  # ==========================================
+  deploy-production:
+    if: github.ref == 'refs/heads/main'
+    runs-on: self-hosted
+    needs: ci-testing # Bắt buộc phải qua môn CI mới được chạy
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image and Run Production Container
+        run: |
+          docker build -t myapp-api:main .
+          docker stop myapp-production || true
+          docker rm myapp-production || true
+          docker run -d --name myapp-production -p 5000:5000 myapp-api:main
