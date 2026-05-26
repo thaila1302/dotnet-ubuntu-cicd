@@ -1,4 +1,4 @@
-name: .NET Core CI/CD
+name: .NET Core CI/CD with Docker
 
 on:
   push:
@@ -12,22 +12,30 @@ jobs:
     - name: Checkout Source Code
       uses: actions/checkout@v4
 
-    - name: Publish Application
-      # Sử dụng dotnet publish để đóng gói app vào thư mục tạm của Runner
-      run: dotnet publish ./MyApiApp/MyApiApp.csproj -c Release -o ./MyApiApp/publish
-
-    # --- NHÁNH DEVELOP: Deploy lên cổng 5001 (Staging) ---
+    # --- NHÁNH DEVELOP: Deploy Container lên cổng 5001 ---
     - name: Deploy to Staging (Develop)
       if: github.ref == 'refs/heads/develop'
-      env:
-        RUNNER_TRACK_PROCESSES: false
       run: |
-        sudo systemctl restart myapp-staging.service
+        # 1. Build Docker Image từ file Dockerfile vừa tạo
+        docker build -t myapp-api:develop .
+        
+        # 2. Dừng và xóa container cũ (nếu có) để giải phóng cổng 5001
+        docker stop myapp-staging || true
+        docker rm myapp-staging || true
+        
+        # 3. Chạy container mới: Map cổng 5001 của máy Ubuntu vào cổng 5000 bên trong Docker
+        docker run -d --name myapp-staging -p 5001:5000 myapp-api:develop
 
-    # --- NHÁNH MAIN: Deploy lên cổng 5000 (Production) ---
+    # --- NHÁNH MAIN: Deploy Container lên cổng 5000 ---
     - name: Deploy to Production (Main)
       if: github.ref == 'refs/heads/main'
-      env:
-        RUNNER_TRACK_PROCESSES: false
       run: |
-        sudo systemctl restart myapp-production.service
+        # 1. Build Docker Image cho Production
+        docker build -t myapp-api:main .
+        
+        # 2. Dừng và xóa container cũ trên cổng 5000
+        docker stop myapp-production || true
+        docker rm myapp-production || true
+        
+        # 3. Chạy container mới: Map cổng 5000 của máy Ubuntu vào cổng 5000 bên trong Docker
+        docker run -d --name my-app-production -p 5000:5000 myapp-api:main
