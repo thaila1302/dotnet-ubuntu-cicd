@@ -38,4 +38,4 @@ jobs:
         docker rm myapp-production || true
         
         # 3. Chạy container mới: Map cổng 5000 của máy Ubuntu vào cổng 5000 bên trong Docker
-        docker run -d --name my-app-production -p 5000:5000 myapp-api:main
+        docker run -d --name myapp-production -p 5000:5000 myapp-api:main
